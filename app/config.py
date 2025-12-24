@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     COMPLETED_DIR: str = os.getenv("COMPLETED_DIR", "/Volumes/Expansion/Lambrk/completed")
     
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
-    API_PORT: int = int(os.getenv("API_PORT", "8000"))
+    API_PORT: int = int(os.getenv("API_PORT", "4500"))
     
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
     

@@ -139,7 +139,7 @@ fi
 # Start the service
 echo -e "${YELLOW}Starting compression service...${NC}"
 API_HOST=${API_HOST:-0.0.0.0}
-API_PORT=${API_PORT:-8000}
+API_PORT=${API_PORT:-4500}
 
 nohup uvicorn app.main:app --host "$API_HOST" --port "$API_PORT" > compression_service.log 2>&1 &
 SERVICE_PID=$!

@@ -5,7 +5,7 @@ Complete API documentation for the Lambrk Compression Service.
 ## Base URL
 
 ```
-http://localhost:8000/api/compression
+http://localhost:4500/api/compression
 ```
 
 ## Authentication
@@ -51,7 +51,7 @@ Compress a single video file into multiple quality versions.
 
 **Example:**
 ```bash
-curl -X POST "http://localhost:8000/api/compression/compress" \
+curl -X POST "http://localhost:4500/api/compression/compress" \
   -H "Content-Type: application/json" \
   -d '{
     "video_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -112,7 +112,7 @@ Compress multiple videos in parallel.
 
 **Example:**
 ```bash
-curl -X POST "http://localhost:8000/api/compression/compress/batch" \
+curl -X POST "http://localhost:4500/api/compression/compress/batch" \
   -H "Content-Type: application/json" \
   -d '{
     "videos": [
@@ -169,7 +169,7 @@ Retrieve all quality versions for a specific video.
 
 **Example:**
 ```bash
-curl "http://localhost:8000/api/compression/video/550e8400-e29b-41d4-a716-446655440000/qualities"
+curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/qualities"
 ```
 
 ---
@@ -208,7 +208,7 @@ Get the compression status for a video and all its quality versions.
 
 **Example:**
 ```bash
-curl "http://localhost:8000/api/compression/video/550e8400-e29b-41d4-a716-446655440000/status"
+curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/status"
 ```
 
 ---
@@ -235,7 +235,7 @@ Check the health status of the service.
 
 **Example:**
 ```bash
-curl "http://localhost:8000/api/compression/health"
+curl "http://localhost:4500/api/compression/health"
 ```
 
 ---

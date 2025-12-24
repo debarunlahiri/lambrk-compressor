@@ -42,7 +42,7 @@ Database service documentation:
 ## Quick Links
 
 - **Getting Started**: See main [README.md](../README.md)
-- **API Documentation**: Interactive docs at http://localhost:8000/docs
+- **API Documentation**: Interactive docs at http://localhost:4500/docs
 - **Code Structure**: See main README for project structure
 
 ## Documentation Standards

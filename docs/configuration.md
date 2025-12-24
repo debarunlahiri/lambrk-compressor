@@ -110,11 +110,11 @@ export API_HOST=0.0.0.0
 
 #### API_PORT
 - **Description**: Port number for the API server
-- **Default**: `8000`
-- **Example**: `8000` or `3000`
+- **Default**: `4500`
+- **Example**: `4500` or `3000`
 
 ```bash
-export API_PORT=8000
+export API_PORT=4500
 ```
 
 **Note**: Ensure the port is not already in use by another service.
@@ -159,7 +159,7 @@ COMPLETED_DIR=/Volumes/Expansion/Lambrk/completed
 
 # API Configuration
 API_HOST=0.0.0.0
-API_PORT=8000
+API_PORT=4500
 
 # Logging Configuration
 LOG_LEVEL=INFO

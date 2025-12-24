@@ -62,7 +62,7 @@ PENDING_DIR=/Volumes/Expansion/Lambrk/pending
 COMPLETED_DIR=/Volumes/Expansion/Lambrk/completed
 
 API_HOST=0.0.0.0
-API_PORT=8000
+API_PORT=4500
 
 LOG_LEVEL=INFO
 ```
@@ -91,7 +91,7 @@ This script will:
 ### Manual startup
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 4500
 ```
 
 ### Stop the service
@@ -104,8 +104,8 @@ uvicorn app.main:app --host 0.0.0.0 --port 8000
 
 Once the service is running, access the interactive API documentation:
 
-- **Swagger UI**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:4500/docs
+- **ReDoc**: http://localhost:4500/redoc
 
 For detailed API documentation, see the [docs](./docs/) folder.
 
@@ -149,7 +149,7 @@ lambrk-compression/
 ### Compress a single video
 
 ```bash
-curl -X POST "http://localhost:8000/api/compression/compress" \
+curl -X POST "http://localhost:4500/api/compression/compress" \
   -H "Content-Type: application/json" \
   -d '{
     "video_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -161,7 +161,7 @@ curl -X POST "http://localhost:8000/api/compression/compress" \
 ### Batch compress multiple videos
 
 ```bash
-curl -X POST "http://localhost:8000/api/compression/compress/batch" \
+curl -X POST "http://localhost:4500/api/compression/compress/batch" \
   -H "Content-Type: application/json" \
   -d '{
     "videos": [
@@ -183,13 +183,13 @@ curl -X POST "http://localhost:8000/api/compression/compress/batch" \
 ### Get video qualities
 
 ```bash
-curl "http://localhost:8000/api/compression/video/{video_id}/qualities"
+curl "http://localhost:4500/api/compression/video/{video_id}/qualities"
 ```
 
 ### Check video status
 
 ```bash
-curl "http://localhost:8000/api/compression/video/{video_id}/status"
+curl "http://localhost:4500/api/compression/video/{video_id}/status"
 ```
 
 ## Video Quality Configuration

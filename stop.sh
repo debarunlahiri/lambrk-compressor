@@ -19,7 +19,7 @@ if [ ! -f "compression_service.pid" ]; then
     echo -e "${YELLOW}⚠ PID file not found. Service may not be running.${NC}"
     
     # Try to find the process by port
-    API_PORT=${API_PORT:-8000}
+    API_PORT=${API_PORT:-4500}
     PID_BY_PORT=$(lsof -ti:$API_PORT 2>/dev/null)
     
     if [ -n "$PID_BY_PORT" ]; then
