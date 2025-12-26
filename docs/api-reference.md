@@ -2,23 +2,30 @@
 
 Complete API documentation for the Lambrk Compression Service.
 
-## Base URL
+## Base Information
 
+**Base URL:** `http://localhost:4500/api/compression`
+
+**Content-Type:** `application/json`
+
+**Authentication:** Currently not required (can be added for production)
+
+---
+
+## API Endpoints
+
+### CREATE Operations
+
+#### 1. Compress Single Video
+
+**Method:** `POST`  
+**URL:** `http://localhost:4500/api/compression/compress`  
+**Description:** Start compression job for a single video file. Creates multiple quality versions and uploads to S3.
+
+**Request Headers:**
+```http
+Content-Type: application/json
 ```
-http://localhost:4500/api/compression
-```
-
-## Authentication
-
-Currently, the API does not require authentication. This can be added based on your security requirements.
-
-## Endpoints
-
-### 1. Compress Single Video
-
-Compress a single video file into multiple quality versions.
-
-**Endpoint:** `POST /api/compression/compress`
 
 **Request Body:**
 ```json
@@ -29,27 +36,14 @@ Compress a single video file into multiple quality versions.
 }
 ```
 
-**Parameters:**
-- `video_id` (string, required): UUID of the video record in the database
-- `filename` (string, required): Name of the video file in the pending directory
-- `video_url_base` (string, optional): Base URL for video file URLs (default: "https://example.com/videos")
+**Request Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `video_id` | string (UUID) | Yes | UUID of the video record in the database |
+| `filename` | string | Yes | Name of the video file in the pending directory |
+| `video_url_base` | string | No | Base URL for fallback (default: "https://example.com/videos"). S3 URLs are used if AWS is configured |
 
-**Response:**
-```json
-{
-  "success": true,
-  "message": "Compression job started",
-  "video_id": "550e8400-e29b-41d4-a716-446655440000"
-}
-```
-
-**Status Codes:**
-- `200 OK`: Compression job started successfully
-- `400 Bad Request`: Invalid video_id format or missing required fields
-- `404 Not Found`: Video not found in database or file not found in pending directory
-- `500 Internal Server Error`: Server error
-
-**Example:**
+**Full cURL Request:**
 ```bash
 curl -X POST "http://localhost:4500/api/compression/compress" \
   -H "Content-Type: application/json" \
@@ -60,13 +54,55 @@ curl -X POST "http://localhost:4500/api/compression/compress" \
   }'
 ```
 
+**Success Response (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Compression job started",
+  "video_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "detail": "Invalid video_id format"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "detail": "Video not found"
+}
+```
+
+**Error Response (404 Not Found - File):**
+```json
+{
+  "detail": "Video file not found in pending directory: my_video.mp4"
+}
+```
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Error starting compression: [error details]"
+}
+```
+
 ---
 
-### 2. Batch Compress Videos
+#### 2. Batch Compress Videos
 
-Compress multiple videos in parallel.
+**Method:** `POST`  
+**URL:** `http://localhost:4500/api/compression/compress/batch`  
+**Description:** Start compression jobs for multiple videos in parallel.
 
-**Endpoint:** `POST /api/compression/compress/batch`
+**Request Headers:**
+```http
+Content-Type: application/json
+```
 
 **Request Body:**
 ```json
@@ -81,20 +117,46 @@ Compress multiple videos in parallel.
       "video_id": "660e8400-e29b-41d4-a716-446655440001",
       "filename": "video2.mp4",
       "video_url_base": "https://example.com/videos"
+    },
+    {
+      "video_id": "770e8400-e29b-41d4-a716-446655440002",
+      "filename": "video3.mp4"
     }
   ],
   "max_workers": 4
 }
 ```
 
-**Parameters:**
-- `videos` (array, required): Array of video compression requests
-  - `video_id` (string, required): UUID of the video record
-  - `filename` (string, required): Name of the video file
-  - `video_url_base` (string, optional): Base URL for video file URLs
-- `max_workers` (integer, optional): Maximum number of parallel workers (default: 4)
+**Request Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `videos` | array | Yes | Array of video compression requests |
+| `videos[].video_id` | string (UUID) | Yes | UUID of the video record |
+| `videos[].filename` | string | Yes | Name of the video file |
+| `videos[].video_url_base` | string | No | Base URL for fallback |
+| `max_workers` | integer | No | Maximum parallel workers (default: 4) |
 
-**Response:**
+**Full cURL Request:**
+```bash
+curl -X POST "http://localhost:4500/api/compression/compress/batch" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "videos": [
+      {
+        "video_id": "550e8400-e29b-41d4-a716-446655440000",
+        "filename": "video1.mp4",
+        "video_url_base": "https://example.com/videos"
+      },
+      {
+        "video_id": "660e8400-e29b-41d4-a716-446655440001",
+        "filename": "video2.mp4"
+      }
+    ],
+    "max_workers": 4
+  }'
+```
+
+**Success Response (200 OK):**
 ```json
 {
   "success": true,
@@ -105,38 +167,43 @@ Compress multiple videos in parallel.
 }
 ```
 
-**Status Codes:**
-- `200 OK`: Batch compression job started
-- `400 Bad Request`: No valid videos to process or invalid format
-- `500 Internal Server Error`: Server error
+**Note:** The `results` array will be empty initially as processing happens in the background. Use the status endpoint to check progress.
 
-**Example:**
-```bash
-curl -X POST "http://localhost:4500/api/compression/compress/batch" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "videos": [
-      {
-        "video_id": "550e8400-e29b-41d4-a716-446655440000",
-        "filename": "video1.mp4"
-      }
-    ],
-    "max_workers": 4
-  }'
+**Error Response (400 Bad Request):**
+```json
+{
+  "detail": "No valid videos to process"
+}
+```
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Error starting batch compression: [error details]"
+}
 ```
 
 ---
 
-### 3. Get Video Qualities
+### READ Operations
 
-Retrieve all quality versions for a specific video.
+#### 3. Get Video Qualities
 
-**Endpoint:** `GET /api/compression/video/{video_id}/qualities`
+**Method:** `GET`  
+**URL:** `http://localhost:4500/api/compression/video/{video_id}/qualities`  
+**Description:** Retrieve all quality versions for a specific video.
 
-**Path Parameters:**
-- `video_id` (string, required): UUID of the video
+**URL Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `video_id` | string (UUID) | Yes | UUID of the video |
 
-**Response:**
+**Full cURL Request:**
+```bash
+curl -X GET "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/qualities"
+```
+
+**Success Response (200 OK):**
 ```json
 {
   "success": true,
@@ -145,7 +212,7 @@ Retrieve all quality versions for a specific video.
       "id": "770e8400-e29b-41d4-a716-446655440000",
       "video_id": "550e8400-e29b-41d4-a716-446655440000",
       "quality": "720p",
-      "url": "https://example.com/videos/550e8400-e29b-41d4-a716-446655440000/video_720p.mp4",
+      "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_720p.mp4",
       "file_size": 104857600,
       "bitrate": 5000,
       "resolution_width": 1280,
@@ -157,33 +224,78 @@ Retrieve all quality versions for a specific video.
       "status": "ready",
       "created_at": "2024-01-01T00:00:00.000Z",
       "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "880e8400-e29b-41d4-a716-446655440001",
+      "video_id": "550e8400-e29b-41d4-a716-446655440000",
+      "quality": "1080p",
+      "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_1080p.mp4",
+      "file_size": 209715200,
+      "bitrate": 8000,
+      "resolution_width": 1920,
+      "resolution_height": 1080,
+      "codec": "h264",
+      "container": "mp4",
+      "duration": 3600,
+      "is_default": false,
+      "status": "ready",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    },
+    {
+      "id": "990e8400-e29b-41d4-a716-446655440002",
+      "video_id": "550e8400-e29b-41d4-a716-446655440000",
+      "quality": "original",
+      "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video.mp4",
+      "file_size": 524288000,
+      "bitrate": 12000,
+      "resolution_width": 1920,
+      "resolution_height": 1080,
+      "codec": "h264",
+      "container": "mp4",
+      "duration": 3600,
+      "is_default": false,
+      "status": "ready",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
     }
   ]
 }
 ```
 
-**Status Codes:**
-- `200 OK`: Success
-- `400 Bad Request`: Invalid video_id format
-- `500 Internal Server Error`: Server error
+**Error Response (400 Bad Request):**
+```json
+{
+  "detail": "Invalid video_id format"
+}
+```
 
-**Example:**
-```bash
-curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/qualities"
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Error fetching video qualities: [error details]"
+}
 ```
 
 ---
 
-### 4. Get Video Status
+#### 4. Get Video Status
 
-Get the compression status for a video and all its quality versions.
+**Method:** `GET`  
+**URL:** `http://localhost:4500/api/compression/video/{video_id}/status`  
+**Description:** Get the compression status for a video and all its quality versions.
 
-**Endpoint:** `GET /api/compression/video/{video_id}/status`
+**URL Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `video_id` | string (UUID) | Yes | UUID of the video |
 
-**Path Parameters:**
-- `video_id` (string, required): UUID of the video
+**Full cURL Request:**
+```bash
+curl -X GET "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/status"
+```
 
-**Response:**
+**Success Response (200 OK):**
 ```json
 {
   "success": true,
@@ -195,31 +307,83 @@ Get the compression status for a video and all its quality versions.
     "360p": "ready",
     "480p": "ready",
     "720p": "ready",
-    "1080p": "processing"
+    "1080p": "ready",
+    "original": "ready"
   }
 }
 ```
 
-**Status Codes:**
-- `200 OK`: Success
-- `400 Bad Request`: Invalid video_id format
-- `404 Not Found`: Video not found
-- `500 Internal Server Error`: Server error
+**Response with Processing Status:**
+```json
+{
+  "success": true,
+  "video_id": "550e8400-e29b-41d4-a716-446655440000",
+  "video_status": "processing",
+  "qualities": {
+    "144p": "ready",
+    "240p": "ready",
+    "360p": "ready",
+    "480p": "ready",
+    "720p": "ready",
+    "1080p": "processing",
+    "original": "processing"
+  }
+}
+```
 
-**Example:**
-```bash
-curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/status"
+**Response with Failed Qualities:**
+```json
+{
+  "success": true,
+  "video_id": "550e8400-e29b-41d4-a716-446655440000",
+  "video_status": "published",
+  "qualities": {
+    "144p": "ready",
+    "240p": "ready",
+    "360p": "ready",
+    "480p": "ready",
+    "720p": "ready",
+    "1080p": "failed",
+    "original": "ready"
+  }
+}
+```
+
+**Error Response (400 Bad Request):**
+```json
+{
+  "detail": "Invalid video_id format"
+}
+```
+
+**Error Response (404 Not Found):**
+```json
+{
+  "detail": "Video not found"
+}
+```
+
+**Error Response (500 Internal Server Error):**
+```json
+{
+  "detail": "Error fetching video status: [error details]"
+}
 ```
 
 ---
 
-### 5. Health Check
+#### 5. Health Check
 
-Check the health status of the service.
+**Method:** `GET`  
+**URL:** `http://localhost:4500/api/compression/health`  
+**Description:** Check the health status of the service, database connection, and directory access.
 
-**Endpoint:** `GET /api/compression/health`
+**Full cURL Request:**
+```bash
+curl -X GET "http://localhost:4500/api/compression/health"
+```
 
-**Response:**
+**Success Response (200 OK) - Healthy:**
 ```json
 {
   "status": "healthy",
@@ -229,33 +393,44 @@ Check the health status of the service.
 }
 ```
 
-**Status Codes:**
-- `200 OK`: Service is healthy
-- `200 OK`: Service is unhealthy (check error field)
-
-**Example:**
-```bash
-curl "http://localhost:4500/api/compression/health"
+**Response (200 OK) - Unhealthy:**
+```json
+{
+  "status": "unhealthy",
+  "database": "disconnected",
+  "error": "Connection refused"
+}
 ```
 
 ---
 
-## Data Models
+## Complete Data Models
 
 ### CompressionRequest
 
 ```typescript
-{
-  video_id: string;        // UUID
-  filename: string;        // Video filename
-  video_url_base?: string; // Base URL for video files
+interface CompressionRequest {
+  video_id: string;              // UUID format: "550e8400-e29b-41d4-a716-446655440000"
+  filename: string;               // Example: "my_video.mp4"
+  video_url_base?: string;        // Optional, default: "https://example.com/videos"
 }
 ```
+
+**Example:**
+```json
+{
+  "video_id": "550e8400-e29b-41d4-a716-446655440000",
+  "filename": "my_video.mp4",
+  "video_url_base": "https://example.com/videos"
+}
+```
+
+---
 
 ### CompressionResponse
 
 ```typescript
-{
+interface CompressionResponse {
   success: boolean;
   message: string;
   video_id?: string;
@@ -263,41 +438,50 @@ curl "http://localhost:4500/api/compression/health"
 }
 ```
 
-### VideoQualityResponse
-
-```typescript
+**Example:**
+```json
 {
-  id: string;
-  video_id: string;
-  quality: string;              // '144p' | '240p' | '360p' | '480p' | '720p' | '1080p' | '1440p' | '2160p' | 'original'
-  url: string;
-  file_size?: number;
-  bitrate?: number;
-  resolution_width?: number;
-  resolution_height?: number;
-  codec?: string;
-  container?: string;
-  duration?: number;
-  is_default: boolean;
-  status: string;                // 'processing' | 'ready' | 'failed'
-  created_at: string;
-  updated_at: string;
+  "success": true,
+  "message": "Compression job started",
+  "video_id": "550e8400-e29b-41d4-a716-446655440000"
 }
 ```
+
+---
 
 ### BatchCompressionRequest
 
 ```typescript
-{
+interface BatchCompressionRequest {
   videos: CompressionRequest[];
-  max_workers?: number;         // Default: 4
+  max_workers?: number;           // Default: 4, range: 1-10 recommended
 }
 ```
+
+**Example:**
+```json
+{
+  "videos": [
+    {
+      "video_id": "550e8400-e29b-41d4-a716-446655440000",
+      "filename": "video1.mp4"
+    },
+    {
+      "video_id": "660e8400-e29b-41d4-a716-446655440001",
+      "filename": "video2.mp4",
+      "video_url_base": "https://example.com/videos"
+    }
+  ],
+  "max_workers": 4
+}
+```
+
+---
 
 ### BatchCompressionResponse
 
 ```typescript
-{
+interface BatchCompressionResponse {
   success: boolean;
   total: number;
   success_count: number;
@@ -316,9 +500,115 @@ curl "http://localhost:4500/api/compression/health"
 }
 ```
 
-## Error Responses
+**Example:**
+```json
+{
+  "success": true,
+  "total": 2,
+  "success_count": 0,
+  "failed_count": 0,
+  "results": []
+}
+```
 
-All endpoints may return error responses in the following format:
+---
+
+### VideoQualityResponse
+
+```typescript
+interface VideoQualityResponse {
+  id: string;                     // UUID
+  video_id: string;               // UUID
+  quality: '144p' | '240p' | '360p' | '480p' | '720p' | '1080p' | '1440p' | '2160p' | 'original';
+  url: string;                    // S3 URL or local URL
+  file_size?: number;             // Bytes
+  bitrate?: number;                // kbps
+  resolution_width?: number;       // Pixels
+  resolution_height?: number;      // Pixels
+  codec?: string;                 // e.g., "h264"
+  container?: string;             // e.g., "mp4"
+  duration?: number;               // Seconds
+  is_default: boolean;
+  status: 'processing' | 'ready' | 'failed';
+  created_at: string;             // ISO 8601 format
+  updated_at: string;              // ISO 8601 format
+}
+```
+
+**Example:**
+```json
+{
+  "id": "770e8400-e29b-41d4-a716-446655440000",
+  "video_id": "550e8400-e29b-41d4-a716-446655440000",
+  "quality": "720p",
+  "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_720p.mp4",
+  "file_size": 104857600,
+  "bitrate": 5000,
+  "resolution_width": 1280,
+  "resolution_height": 720,
+  "codec": "h264",
+  "container": "mp4",
+  "duration": 3600,
+  "is_default": true,
+  "status": "ready",
+  "created_at": "2024-01-01T00:00:00.000Z",
+  "updated_at": "2024-01-01T00:00:00.000Z"
+}
+```
+
+---
+
+### VideoQualitiesResponse
+
+```typescript
+interface VideoQualitiesResponse {
+  success: boolean;
+  qualities: VideoQualityResponse[];
+}
+```
+
+**Example:**
+```json
+{
+  "success": true,
+  "qualities": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440000",
+      "video_id": "550e8400-e29b-41d4-a716-446655440000",
+      "quality": "720p",
+      "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_720p.mp4",
+      "file_size": 104857600,
+      "bitrate": 5000,
+      "resolution_width": 1280,
+      "resolution_height": 720,
+      "codec": "h264",
+      "container": "mp4",
+      "duration": 3600,
+      "is_default": true,
+      "status": "ready",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## HTTP Status Codes
+
+| Code | Meaning | Description |
+|------|---------|-------------|
+| `200` | OK | Request successful |
+| `400` | Bad Request | Invalid request parameters or format |
+| `404` | Not Found | Resource (video/file) not found |
+| `500` | Internal Server Error | Server error occurred |
+
+---
+
+## Error Response Format
+
+All error responses follow this format:
 
 ```json
 {
@@ -326,20 +616,132 @@ All endpoints may return error responses in the following format:
 }
 ```
 
-Common HTTP status codes:
-- `400 Bad Request`: Invalid request parameters
-- `404 Not Found`: Resource not found
-- `500 Internal Server Error`: Server error
+**Examples:**
+
+**400 Bad Request:**
+```json
+{
+  "detail": "Invalid video_id format"
+}
+```
+
+**404 Not Found:**
+```json
+{
+  "detail": "Video not found"
+}
+```
+
+**500 Internal Server Error:**
+```json
+{
+  "detail": "Error starting compression: Database connection failed"
+}
+```
+
+---
+
+## Complete Workflow Example
+
+### Step 1: Compress a Video
+
+**Request:**
+```bash
+curl -X POST "http://localhost:4500/api/compression/compress" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "video_id": "550e8400-e29b-41d4-a716-446655440000",
+    "filename": "my_video.mp4"
+  }'
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Compression job started",
+  "video_id": "550e8400-e29b-41d4-a716-446655440000"
+}
+```
+
+### Step 2: Check Status
+
+**Request:**
+```bash
+curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/status"
+```
+
+**Response (Processing):**
+```json
+{
+  "success": true,
+  "video_id": "550e8400-e29b-41d4-a716-446655440000",
+  "video_status": "processing",
+  "qualities": {
+    "144p": "processing",
+    "240p": "processing",
+    "360p": "ready",
+    "480p": "ready",
+    "720p": "ready"
+  }
+}
+```
+
+### Step 3: Get All Qualities
+
+**Request:**
+```bash
+curl "http://localhost:4500/api/compression/video/550e8400-e29b-41d4-a716-446655440000/qualities"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "qualities": [
+    {
+      "id": "770e8400-e29b-41d4-a716-446655440000",
+      "video_id": "550e8400-e29b-41d4-a716-446655440000",
+      "quality": "720p",
+      "url": "https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_720p.mp4",
+      "file_size": 104857600,
+      "bitrate": 5000,
+      "resolution_width": 1280,
+      "resolution_height": 720,
+      "codec": "h264",
+      "container": "mp4",
+      "duration": 3600,
+      "is_default": true,
+      "status": "ready",
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ]
+}
+```
+
+---
+
+## Notes
+
+- All compression jobs run **asynchronously** in the background
+- Video files must be placed in the `PENDING_DIR` before starting compression
+- Compressed videos are uploaded to **AWS S3** and saved locally to `COMPLETED_DIR/{video_id}/`
+- S3 URLs are automatically stored in the database
+- The service automatically selects a default quality (prefers 720p, then 1080p, 480p, 360p)
+- Processing status can be checked using the status endpoint
+- Videos are organized in S3 by video_id: `s3://lam-brk/videos/{video_id}/{filename}_{quality}.mp4`
+
+---
 
 ## Rate Limiting
 
 Currently, there is no rate limiting implemented. Consider adding rate limiting for production use.
 
-## Notes
+---
 
-- All compression jobs run asynchronously in the background
-- Video files must be placed in the `PENDING_DIR` before starting compression
-- Compressed videos are saved to `COMPLETED_DIR/{video_id}/`
-- The service automatically selects a default quality (prefers 720p, then 1080p, 480p, 360p)
-- Processing status can be checked using the status endpoint
+## Interactive API Documentation
 
+Access interactive API documentation at:
+- **Swagger UI**: http://localhost:4500/docs
+- **ReDoc**: http://localhost:4500/redoc

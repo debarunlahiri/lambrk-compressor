@@ -121,6 +121,68 @@ export API_PORT=4500
 
 ---
 
+### AWS S3 Configuration
+
+#### AWS_ACCESS_KEY_ID
+- **Description**: AWS access key ID for S3 access
+- **Default**: `` (empty string)
+- **Example**: `AKIAIOSFODNN7EXAMPLE`
+
+```bash
+export AWS_ACCESS_KEY_ID=your_access_key
+```
+
+#### AWS_SECRET_ACCESS_KEY
+- **Description**: AWS secret access key for S3 access
+- **Default**: `` (empty string)
+- **Example**: `wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY`
+
+```bash
+export AWS_SECRET_ACCESS_KEY=your_secret_key
+```
+
+#### AWS_REGION
+- **Description**: AWS region for S3 bucket
+- **Default**: `ap-south-1`
+- **Example**: `ap-south-1` or `us-east-1`
+
+```bash
+export AWS_REGION=ap-south-1
+```
+
+#### AWS_S3_BUCKET
+- **Description**: S3 bucket name for storing videos
+- **Default**: `lam-brk`
+- **Example**: `lam-brk`
+
+```bash
+export AWS_S3_BUCKET=lam-brk
+```
+
+#### AWS_S3_BASE_URL
+- **Description**: Base URL for S3 public access
+- **Default**: `https://lam-brk.s3.ap-south-1.amazonaws.com`
+- **Example**: `https://lam-brk.s3.ap-south-1.amazonaws.com`
+
+```bash
+export AWS_S3_BASE_URL=https://lam-brk.s3.ap-south-1.amazonaws.com
+```
+
+#### AWS_S3_VIDEOS_PREFIX
+- **Description**: S3 prefix/folder for videos
+- **Default**: `videos`
+- **Example**: `videos`
+
+```bash
+export AWS_S3_VIDEOS_PREFIX=videos
+```
+
+**S3 Structure:**
+- Videos are stored at: `s3://{bucket}/{prefix}/{video_id}/{filename}_{quality}.mp4`
+- Public URLs: `{AWS_S3_BASE_URL}/{prefix}/{video_id}/{filename}_{quality}.mp4`
+
+---
+
 ### Logging Configuration
 
 #### LOG_LEVEL
@@ -160,6 +222,14 @@ COMPLETED_DIR=/Volumes/Expansion/Lambrk/completed
 # API Configuration
 API_HOST=0.0.0.0
 API_PORT=4500
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=lam-brk
+AWS_S3_BASE_URL=https://lam-brk.s3.ap-south-1.amazonaws.com
+AWS_S3_VIDEOS_PREFIX=videos
 
 # Logging Configuration
 LOG_LEVEL=INFO

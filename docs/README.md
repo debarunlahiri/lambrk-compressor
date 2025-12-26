@@ -39,6 +39,14 @@ Database service documentation:
 - Error handling
 - Best practices
 
+### [S3 Service](./s3-service.md)
+AWS S3 integration documentation:
+- S3 upload process
+- File organization
+- Configuration
+- Error handling
+- Best practices
+
 ## Quick Links
 
 - **Getting Started**: See main [README.md](../README.md)

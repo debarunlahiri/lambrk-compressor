@@ -10,6 +10,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from app.config import settings
 from services.database import DatabaseService
+from services.s3_service import S3Service
 from utils.video_utils import (
     get_video_info, 
     get_quality_config, 
@@ -177,12 +178,13 @@ class CompressionService:
             output_filename = f"{base_name}_{quality}.mp4"
             output_path = os.path.join(settings.COMPLETED_DIR, str(video_id), output_filename)
             
-            video_quality_url = f"{video_url_base}/{str(video_id)}/{output_filename}"
+            # Create quality record with temporary URL (will be updated after S3 upload)
+            temp_url = f"{video_url_base}/{str(video_id)}/{output_filename}"
             
             quality_record = DatabaseService.create_video_quality(
                 video_id=video_id,
                 quality=quality,
-                url=video_quality_url,
+                url=temp_url,
                 status='processing',
                 processing_started_at=processing_start
             )
@@ -201,8 +203,20 @@ class CompressionService:
             )
             
             if compression_result and compression_result.get('success'):
+                # Upload compressed video to S3
+                s3_url = S3Service.upload_file(output_path, video_id, input_filename, quality)
+                if s3_url:
+                    video_quality_url = s3_url
+                    logger.info(f"Uploaded {quality} to S3: {s3_url}")
+                else:
+                    # Fallback to local URL if S3 upload fails
+                    video_quality_url = temp_url
+                    logger.warning(f"S3 upload failed for {quality}, using local URL")
+                
+                # Update with S3 URL if available
                 DatabaseService.update_video_quality(
                     quality_id=quality_record.id,
+                    url=video_quality_url,
                     file_size=compression_result['file_size'],
                     bitrate=compression_result['bitrate'],
                     resolution_width=compression_result['width'],
@@ -287,12 +301,21 @@ class CompressionService:
                 if not os.path.exists(original_output):
                     shutil.copy2(input_path, original_output)
                 
+                # Upload original to S3
+                original_s3_url = S3Service.upload_file(original_output, video_id, filename, 'original')
+                if not original_s3_url:
+                    # Fallback to local URL if S3 upload fails
+                    original_url = f"{video_url_base}/{str(video_id)}/{filename}"
+                    logger.warning("S3 upload failed for original, using local URL")
+                else:
+                    original_url = original_s3_url
+                
                 original_info = get_video_info(original_output)
                 if original_info:
                     original_quality = DatabaseService.create_video_quality(
                         video_id=video_id,
                         quality='original',
-                        url=f"{video_url_base}/{str(video_id)}/{filename}",
+                        url=original_url,
                         file_size=original_info.get('file_size'),
                         bitrate=original_info.get('bitrate'),
                         resolution_width=original_info.get('width'),

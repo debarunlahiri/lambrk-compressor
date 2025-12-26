@@ -48,6 +48,8 @@ Stores multiple quality versions for each video (YouTube-like multi-quality supp
 - `quality` (VARCHAR(20), NOT NULL): Quality level
   - Valid values: '144p', '240p', '360p', '480p', '720p', '1080p', '1440p', '2160p', 'original'
 - `url` (TEXT, NOT NULL): URL to the quality version file
+  - Typically an AWS S3 public URL: `https://lam-brk.s3.ap-south-1.amazonaws.com/videos/{video_id}/{filename}_{quality}.mp4`
+  - Falls back to local URL if S3 upload fails
 - `file_size` (BIGINT): File size in bytes
 - `bitrate` (INTEGER): Video bitrate in kbps
 - `resolution_width` (INTEGER): Video width in pixels
@@ -130,8 +132,13 @@ videos (1) ──< (many) video_qualities
 1. Video record is created in `videos` table (by main video service)
 2. Compression service creates quality records in `video_qualities` with status 'processing'
 3. FFmpeg compresses video to each quality
-4. Quality records are updated with metadata and status 'ready'
-5. One quality is marked as `is_default = true`
+4. Compressed videos are uploaded to AWS S3
+5. Quality records are updated with S3 URLs, metadata, and status 'ready'
+6. One quality is marked as `is_default = true`
+
+**S3 URL Format:**
+- `https://lam-brk.s3.ap-south-1.amazonaws.com/videos/{video_id}/{filename}_{quality}.mp4`
+- Example: `https://lam-brk.s3.ap-south-1.amazonaws.com/videos/550e8400-e29b-41d4-a716-446655440000/my_video_720p.mp4`
 
 ## Query Examples
 

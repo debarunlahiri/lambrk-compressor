@@ -9,6 +9,7 @@ A high-performance video compression REST API service built with Python, FastAPI
 - **Batch Processing**: Process multiple videos in parallel with configurable worker threads
 - **Comprehensive Metadata**: Stores detailed video and audio metadata (fps, codec, bitrate, resolution, etc.)
 - **PostgreSQL Integration**: Stores video quality information in PostgreSQL database
+- **AWS S3 Integration**: Automatically uploads compressed videos to AWS S3
 - **REST API**: Full REST API with FastAPI for easy integration
 - **Auto Migrations**: Automatic database schema migrations on startup
 
@@ -17,6 +18,7 @@ A high-performance video compression REST API service built with Python, FastAPI
 - Python 3.8+
 - PostgreSQL 12+
 - FFmpeg with FFprobe
+- AWS Account with S3 bucket (for video storage)
 - Apple Silicon (M1/M2/M3) for hardware acceleration (optional, falls back to software encoding)
 
 ## Installation
@@ -65,6 +67,14 @@ API_HOST=0.0.0.0
 API_PORT=4500
 
 LOG_LEVEL=INFO
+
+# AWS S3 Configuration
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+AWS_REGION=ap-south-1
+AWS_S3_BUCKET=lam-brk
+AWS_S3_BASE_URL=https://lam-brk.s3.ap-south-1.amazonaws.com
+AWS_S3_VIDEOS_PREFIX=videos
 ```
 
 ### 5. Run database migrations

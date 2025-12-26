@@ -135,7 +135,8 @@ class DatabaseService:
             DatabaseService.put_connection(conn)
     
     @staticmethod
-    def update_video_quality(quality_id: UUID, file_size: Optional[int] = None,
+    def update_video_quality(quality_id: UUID, url: Optional[str] = None,
+                            file_size: Optional[int] = None,
                             bitrate: Optional[int] = None,
                             resolution_width: Optional[int] = None,
                             resolution_height: Optional[int] = None,
@@ -160,6 +161,9 @@ class DatabaseService:
             updates = []
             params = []
             
+            if url is not None:
+                updates.append("url = %s")
+                params.append(url)
             if file_size is not None:
                 updates.append("file_size = %s")
                 params.append(file_size)
